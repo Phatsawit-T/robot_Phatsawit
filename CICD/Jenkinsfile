@@ -6,14 +6,15 @@
  *
  * Pipeline Stages:
  * 1. Checkout Code From Git  - Pull latest code from GitHub repository
- * 2. Install Dependencies    - Install Python packages and Robot Framework libraries
- * 3. Run Tests in Parallel   - Execute Web, API, and Mobile tests concurrently
- * 4. Publish Test Results    - Archive test results and generate Robot Framework reports
- * 5. Generate Test Report    - Create consolidated test report from all test suites
+ * 2. Run Tests              - Execute selected test suites
+ * 3. Publish Test Results   - Archive test results and reports
  *
  * Parameters:
  * - RUN_MOBILE_TESTS: Enable/disable mobile test execution (requires Appium server)
- * - TEST_SUITE: Select which test suite to run (ALL/WEB/API/MOBILE)
+ * - RUN_WEB_TESTS: Enable/disable web login tests
+ * - RUN_API_TESTS: Enable/disable API tests
+ * - RUN_CAESAR_CIPHER_DECRYPTION: Enable/disable Caesar Cipher tests
+ * - RUN_CHECK_DUPLICATE: Enable/disable check duplicate tests
  * - TAGS: Filter tests by Robot Framework tags (e.g., Smoke, P0, P1)
  *
  * Repository: https://github.com/Phatsawit-T/robot_Phatsawit.git
@@ -67,25 +68,12 @@ pipeline {
     stages {
         stage('Checkout Code From Git') {
             steps {
-                echo "Checking out code from ${REPO_URL}"
                 checkout scm
             }
         }
         
-        // stage('Install Dependencies') {
-        //     steps {
-        //         echo "Installing Python dependencies"
-        //         bat """
-        //             python --version
-        //             pip install --upgrade pip
-        //             pip install -r ${REQUIREMENTS_FILE}
-        //         """
-        //     }
-        // }
-        
         stage('Run Tests') {
             steps {
-                echo "Running Robot Framework Tests"
                 script {
                     def testFiles = []
                     def tagOption = params.TAGS ? "--include ${params.TAGS}" : ""
@@ -93,33 +81,25 @@ pipeline {
                     // เพิ่มไฟล์ test ตาม checkbox ที่เลือก
                     if (params.RUN_WEB_TESTS) {
                         testFiles.add("${SCRIPTS_DIR}/login_test_web.robot")
-                        echo "✓ Selected: Web Login Tests"
                     }
                     
                     if (params.RUN_API_TESTS) {
                         testFiles.add("${SCRIPTS_DIR}/api_testing.robot")
-                        echo "✓ Selected: API Tests"
                     }
                     
                     if (params.RUN_CAESAR_CIPHER_DECRYPTION) {
                         testFiles.add("${SCRIPTS_DIR}/couterclockwise_direction.robot")
-                        echo "✓ Selected: Caesar Cipher Decryption Tests"
                     }
                     
                     if (params.RUN_CHECK_DUPLICATE) {
                         testFiles.add("${SCRIPTS_DIR}/check_dup_item.robot")
-                        echo "✓ Selected: Check Duplicate Tests"
                     }
                     
                     if (params.RUN_MOBILE_TESTS) {
                         testFiles.add("${SCRIPTS_DIR}/mobile_testing.robot")
-                        echo "✓ Selected: Mobile Tests"
                     }
                     
-                    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-                    echo "Total test files: ${testFiles.size()}"
-                    echo "Files: ${testFiles.join(', ')}"
-                    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                    echo "Running ${testFiles.size()} test suite(s)"
                     
                     if (testFiles.size() > 0) {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -128,7 +108,7 @@ pipeline {
                             """
                         }
                     } else {
-                        echo "⚠️  WARNING: No test files selected!"
+                        echo "No test files selected"
                     }
                 }
             }
@@ -136,7 +116,6 @@ pipeline {
         
         stage('Publish Test Results') {
             steps {
-                echo "Publishing test results"
                 script {
                     // Archive test results
                     archiveArtifacts artifacts: "${RESULTS_DIR}/**/*.html, ${RESULTS_DIR}/**/*.xml", 
@@ -147,17 +126,11 @@ pipeline {
     }
     
     post {
-        always {
-            echo "Pipeline execution completed"
-        }
         success {
-            echo "✅ All tests passed successfully!"
+            echo "✅ Tests passed"
         }
         failure {
-            echo "❌ Some tests failed. Check the results."
-        }
-        unstable {
-            echo "⚠️ Tests completed with warnings or some failures."
+            echo "❌ Tests failed"
         }
     }
 }
