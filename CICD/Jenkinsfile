@@ -39,54 +39,57 @@ pipeline {
             }
         }
         
-        // stage('Install Dependencies') {
-        //     steps {
-        //         echo "Installing Python dependencies"
-        //         bat """
-        //             python --version
-        //             pip install --upgrade pip
-        //             pip install -r ${REQUIREMENTS_FILE}
-        //         """
-        //     }
-        // }
+        stage('Install Dependencies') {
+            steps {
+                echo "Installing Python dependencies"
+                bat """
+                    python --version
+                    pip install --upgrade pip
+                    pip install -r ${REQUIREMENTS_FILE}
+                """
+            }
+        }
         
-        stage('Run Tests in Parallel') {
-            parallel {
-                stage('Run Web Tests') {
-                    steps {
-                        echo "Running Web Tests"
+        stage('Run Tests') {
+            steps {
+                echo "Running Robot Framework Tests"
+                script {
+                    def testFiles = []
+                    def tagOption = params.TAGS ? "--include ${params.TAGS}" : ""
+                    
+                    // กำหนด test files ตาม TEST_SUITE parameter
+                    switch(params.TEST_SUITE) {
+                        case 'WEB':
+                            testFiles.add("${SCRIPTS_DIR}/login_test_web.robot")
+                            break
+                        case 'API':
+                            testFiles.add("${SCRIPTS_DIR}/api_testing.robot")
+                            break
+                        case 'MOBILE':
+                            if (params.RUN_MOBILE_TESTS) {
+                                testFiles.add("${SCRIPTS_DIR}/mobile_testing.robot")
+                            } else {
+                                echo "Mobile tests are disabled"
+                            }
+                            break
+                        case 'ALL':
+                        default:
+                            testFiles.add("${SCRIPTS_DIR}/login_test_web.robot")
+                            testFiles.add("${SCRIPTS_DIR}/api_testing.robot")
+                            if (params.RUN_MOBILE_TESTS) {
+                                testFiles.add("${SCRIPTS_DIR}/mobile_testing.robot")
+                            }
+                            break
+                    }
+                    
+                    if (testFiles.size() > 0) {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             bat """
-                                robot --name "Web Tests" --outputdir ${RESULTS_DIR}/web ${SCRIPTS_DIR}/login_test_web.robot
+                                robot --name "Automated Test Report" ${tagOption} --outputdir ${RESULTS_DIR} ${testFiles.join(' ')}
                             """
                         }
-                    }
-                }
-                
-                stage('Run API Tests') {
-                    steps {
-                        echo "Running API Tests"
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            bat """
-                                robot --name "API Tests" --outputdir ${RESULTS_DIR}/api ${SCRIPTS_DIR}/api_testing.robot
-                            """
-                        }
-                    }
-                }
-                
-                stage('Run Mobile Tests') {
-                    when {
-                        expression { 
-                            return params.RUN_MOBILE_TESTS == true 
-                        }
-                    }
-                    steps {
-                        echo "Running Mobile Tests"
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            bat """
-                                robot --name "Mobile Tests" --outputdir ${RESULTS_DIR}/mobile ${SCRIPTS_DIR}/mobile_testing.robot
-                            """
-                        }
+                    } else {
+                        echo "No test files to execute"
                     }
                 }
             }
@@ -99,36 +102,6 @@ pipeline {
                     // Archive test results
                     archiveArtifacts artifacts: "${RESULTS_DIR}/**/*.html, ${RESULTS_DIR}/**/*.xml", 
                                    allowEmptyArchive: true
-                }
-            }
-        }
-        
-        stage('Generate Test Report') {
-            steps {
-                echo "Generating consolidated test report"
-                script {
-                    def outputFiles = []
-                    
-                    if (fileExists("${RESULTS_DIR}/web/output.xml")) {
-                        outputFiles.add("${RESULTS_DIR}/web/output.xml")
-                    }
-                    
-                    if (fileExists("${RESULTS_DIR}/api/output.xml")) {
-                        outputFiles.add("${RESULTS_DIR}/api/output.xml")
-                    }
-                    
-                    if (outputFiles.size() > 0) {
-                        bat """
-                            rebot --name "Automated Test Report" ^
-                                  --outputdir ${RESULTS_DIR}/consolidated ^
-                                  --output output.xml ^
-                                  --log log.html ^
-                                  --report report.html ^
-                                  ${outputFiles.join(' ^')}
-                        """
-                    } else {
-                        echo "No test results to consolidate"
-                    }
                 }
             }
         }
