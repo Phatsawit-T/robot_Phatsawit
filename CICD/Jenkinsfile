@@ -39,16 +39,16 @@ pipeline {
             }
         }
         
-        stage('Install Dependencies') {
-            steps {
-                echo "Installing Python dependencies"
-                bat """
-                    python --version
-                    pip install --upgrade pip
-                    pip install -r ${REQUIREMENTS_FILE}
-                """
-            }
-        }
+        // stage('Install Dependencies') {
+        //     steps {
+        //         echo "Installing Python dependencies"
+        //         bat """
+        //             python --version
+        //             pip install --upgrade pip
+        //             pip install -r ${REQUIREMENTS_FILE}
+        //         """
+        //     }
+        // }
         
         stage('Run Tests in Parallel') {
             parallel {
