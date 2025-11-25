@@ -1,0 +1,156 @@
+pipeline {
+    agent any
+    
+    environment {
+        REPO_URL = 'https://github.com/Phatsawit-T/robot_Phatsawit.git'
+        RESULTS_DIR = 'results'
+        SCRIPTS_DIR = 'src/scripts'
+        REQUIREMENTS_FILE = 'requirements.txt'
+        PYTHON_VERSION = '3.10'
+    }
+    
+    stages {
+        stage('Checkout Code From Git') {
+            steps {
+                echo "Checking out code from ${REPO_URL}"
+                checkout scm
+            }
+        }
+        
+        stage('Install Dependencies') {
+            steps {
+                echo "Installing Python dependencies"
+                bat """
+                    python --version
+                    pip install --upgrade pip
+                    pip install -r ${REQUIREMENTS_FILE}
+                """
+            }
+        }
+        
+        stage('Run Tests in Parallel') {
+            parallel {
+                stage('Run Web Tests') {
+                    steps {
+                        echo "Running Web Tests"
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                            bat """
+                                robot --name "Web Tests" --outputdir ${RESULTS_DIR}/web ${SCRIPTS_DIR}/login_test_web.robot
+                            """
+                        }
+                    }
+                }
+                
+                stage('Run API Tests') {
+                    steps {
+                        echo "Running API Tests"
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                            bat """
+                                robot --name "API Tests" --outputdir ${RESULTS_DIR}/api ${SCRIPTS_DIR}/api_testing.robot
+                            """
+                        }
+                    }
+                }
+                
+                stage('Run Mobile Tests') {
+                    when {
+                        expression { 
+                            return params.RUN_MOBILE_TESTS == true 
+                        }
+                    }
+                    steps {
+                        echo "Running Mobile Tests"
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                            bat """
+                                robot --name "Mobile Tests" --outputdir ${RESULTS_DIR}/mobile ${SCRIPTS_DIR}/mobile_testing.robot
+                            """
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Publish Test Results') {
+            steps {
+                echo "Publishing test results"
+                script {
+                    // Archive test results
+                    archiveArtifacts artifacts: "${RESULTS_DIR}/**/*.html, ${RESULTS_DIR}/**/*.xml", 
+                                   allowEmptyArchive: true
+                    
+                    // Publish Robot Framework results
+                    step([
+                        $class: 'RobotPublisher',
+                        outputPath: RESULTS_DIR,
+                        outputFileName: '**/output.xml',
+                        reportFileName: '**/report.html',
+                        logFileName: '**/log.html',
+                        disableArchiveOutput: false,
+                        passThreshold: 80,
+                        unstableThreshold: 70,
+                        onlyCritical: false
+                    ])
+                }
+            }
+        }
+        
+        stage('Generate Test Report') {
+            steps {
+                echo "Generating consolidated test report"
+                bat """
+                    rebot --name "Automated Test Report" \
+                          --outputdir ${RESULTS_DIR}/consolidated \
+                          --output output.xml \
+                          --log log.html \
+                          --report report.html \
+                          ${RESULTS_DIR}/web/output.xml \
+                          ${RESULTS_DIR}/api/output.xml
+                """
+            }
+        }
+    }
+    
+    post {
+        always {
+            echo "Pipeline execution completed"
+            emailext (
+                subject: "Test Results: ${currentBuild.fullDisplayName}",
+                body: """<p>Build Status: ${currentBuild.result}</p>
+                         <p>Check console output at ${env.BUILD_URL} to view the results.</p>""",
+                to: "${env.CHANGE_AUTHOR_EMAIL}",
+                attachLog: true,
+                compressLog: true
+            )
+        }
+        success {
+            echo "✅ All tests passed successfully!"
+        }
+        failure {
+            echo "❌ Some tests failed. Check the results."
+        }
+        unstable {
+            echo "⚠️ Tests completed with warnings or some failures."
+        }
+    }
+}
+
+// Pipeline Parameters
+properties([
+    parameters([
+        booleanParam(
+            name: 'RUN_MOBILE_TESTS', 
+            defaultValue: true, 
+            description: 'Run mobile tests (requires Appium server)'
+        ),
+        choice(
+            name: 'TEST_SUITE', 
+            choices: ['ALL', 'WEB', 'API', 'MOBILE'], 
+            description: 'Select test suite to run'
+        ),
+        string(
+            name: 'TAGS', 
+            defaultValue: '', 
+            description: 'Robot Framework tags to filter tests (e.g., Smoke, P0)'
+        )
+    ])
+])

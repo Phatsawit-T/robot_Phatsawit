@@ -1,0 +1,23 @@
+BROWSER:
+  BASE_URL: https://the-internet.herokuapp.com
+
+API:
+  BASE_URL: https://reqres.in/api
+  AUTH_KEY:
+    x-api-key: reqres-free-v1
+
+Mobile:
+  REMOTE_URL: http://localhost:4723 #YOUR <REMOTE_URL>
+  PLATFORMNAME: Android #YOUR <PLATFORMNAME>
+  PLATFORMVERSION: "15" #YOUR <PLATFORMVERSION>
+  DEVICENAME: Android Emulator #YOUR <DEVICENAME>
+  UDID: emulator-5554 #YOUR <UDID>
+  APPPACKAGE: com.avjindersinghsekhon.minimaltodo
+  APPACTIVITY: com.example.avjindersinghsekhon.toodle.MainActivity
+  UNICODEKEYBOARD: true
+  RESETKEYBOARD: true
+  NORESET: false
+  NEWCOMMANDTIMEOUT: 6000
+  AUTOMATIONNAME: UiAutomator2
+  AUTOGRANTPERMISSIONS: true
+  AUTOACCEPTALERTS: true

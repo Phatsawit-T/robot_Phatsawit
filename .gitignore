@@ -1,0 +1,40 @@
+# Test Results
+*.png
+*.html
+*.xml
+*.log
+results/
+command/
+
+# Python
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project Specific
+prompts/
+
+# Keep Important Files
+!requirements.txt
+!CICD/
+!.github/

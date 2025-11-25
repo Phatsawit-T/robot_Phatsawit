@@ -1,0 +1,38 @@
+get_user_profile_success:
+  METHOD: GET
+  URL: /users/12
+  STATUS: 200
+  SCHEMA:
+    {
+      "type": "object",
+      "properties":
+        {
+          "data":
+            {
+              "type": "object",
+              "properties":
+                {
+                  "id": { "const": 12 },
+                  "email": { "const": "rachel.howell@reqres.in" },
+                  "first_name": { "const": "Rachel" },
+                  "last_name": { "const": "Howell" },
+                  "avatar":
+                    { "const": "https://reqres.in/img/faces/12-image.jpg" },
+                },
+              "required": ["id", "email", "first_name", "last_name", "avatar"],
+            },
+        },
+      "required": ["data"],
+    }
+
+get_user_profile_but_user_not_found:
+  METHOD: GET
+  URL: /users/1234
+  STATUS: 404
+  SCHEMA:
+    {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": true,
+    }
