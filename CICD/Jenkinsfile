@@ -1,3 +1,24 @@
+/*
+ * Test Automation Assignment - Question 5: Jenkins Pipeline for Executing Automated Scripts
+ *
+ * This Jenkins Pipeline automates the execution of Robot Framework test scripts
+ * covering Web, API, and Mobile test automation.
+ *
+ * Pipeline Stages:
+ * 1. Checkout Code From Git  - Pull latest code from GitHub repository
+ * 2. Install Dependencies    - Install Python packages and Robot Framework libraries
+ * 3. Run Tests in Parallel   - Execute Web, API, and Mobile tests concurrently
+ * 4. Publish Test Results    - Archive test results and generate Robot Framework reports
+ * 5. Generate Test Report    - Create consolidated test report from all test suites
+ *
+ * Parameters:
+ * - RUN_MOBILE_TESTS: Enable/disable mobile test execution (requires Appium server)
+ * - TEST_SUITE: Select which test suite to run (ALL/WEB/API/MOBILE)
+ * - TAGS: Filter tests by Robot Framework tags (e.g., Smoke, P0, P1)
+ *
+ * Repository: https://github.com/Phatsawit-T/robot_Phatsawit.git
+ */
+
 pipeline {
     agent any
     
@@ -98,12 +119,12 @@ pipeline {
             steps {
                 echo "Generating consolidated test report"
                 bat """
-                    rebot --name "Automated Test Report" \
-                          --outputdir ${RESULTS_DIR}/consolidated \
-                          --output output.xml \
-                          --log log.html \
-                          --report report.html \
-                          ${RESULTS_DIR}/web/output.xml \
+                    rebot --name "Automated Test Report" ^
+                          --outputdir ${RESULTS_DIR}/consolidated ^
+                          --output output.xml ^
+                          --log log.html ^
+                          --report report.html ^
+                          ${RESULTS_DIR}/web/output.xml ^
                           ${RESULTS_DIR}/api/output.xml
                 """
             }
@@ -113,14 +134,6 @@ pipeline {
     post {
         always {
             echo "Pipeline execution completed"
-            emailext (
-                subject: "Test Results: ${currentBuild.fullDisplayName}",
-                body: """<p>Build Status: ${currentBuild.result}</p>
-                         <p>Check console output at ${env.BUILD_URL} to view the results.</p>""",
-                to: "${env.CHANGE_AUTHOR_EMAIL}",
-                attachLog: true,
-                compressLog: true
-            )
         }
         success {
             echo "✅ All tests passed successfully!"

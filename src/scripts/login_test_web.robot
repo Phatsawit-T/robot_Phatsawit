@@ -1,4 +1,18 @@
 *** Settings ***
+Documentation       Test Automation Assignment - Question 2: Web Login Testing
+...
+...                 Create automation script to test website 'http://the-internet.herokuapp.com/login'
+...                 following test cases:
+...
+...                 **Login Credentials:**
+...                 - Username: tomsmith
+...                 - Password: SuperSecretPassword!
+...
+...                 **Test Cases:**
+...                 1. Login success - Verify users can login successfully with correct credentials
+...                 2. Login failed - Password incorrect
+...                 3. Login failed - Username not found
+
 Resource            ../../init.resource
 
 Suite Setup         browser.keywords.Initialize Browser

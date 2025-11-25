@@ -1,4 +1,20 @@
 *** Settings ***
+Documentation       Test Automation Assignment - Question 4: Mobile Application Testing
+...
+...                 Design test coverage and create automated test scripts for mobile application.
+...                 Download source code from: https://github.com/avjinder/Minimal-Todo
+...
+...                 **Framework:** Robot Framework + Appium
+...
+...                 **Test Coverage:**
+...                 - App launch verification
+...                 - CRUD operations (Create, Read, Update, Delete)
+...                 - Input validation (special characters, Unicode, empty input)
+...                 - Business logic (duplicate items)
+...                 - Edge cases and negative testing
+...
+...                 **Total Test Cases:** 8 test cases covering main features
+
 Resource            ../../init.resource
 
 Suite Setup         mobile.keywords.Open Mobile Application
