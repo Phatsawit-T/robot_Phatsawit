@@ -28,10 +28,25 @@ pipeline {
             defaultValue: false, 
             description: 'Run mobile tests (requires Appium server)'
         )
-        choice(
-            name: 'TEST_SUITE', 
-            choices: ['WEB', 'API', 'MOBILE', 'ALL'], 
-            description: 'Select test suite to run'
+        booleanParam(
+            name: 'RUN_WEB_TESTS', 
+            defaultValue: true, 
+            description: 'Run login test web'
+        )
+        booleanParam(
+            name: 'RUN_API_TESTS', 
+            defaultValue: true, 
+            description: 'Run api test'
+        )
+        booleanParam(
+            name: 'RUN_CAESAR_CIPHER_DECRYPTION', 
+            defaultValue: true, 
+            description: 'Run Caesar Cipher decryption test'
+        )
+        booleanParam(
+            name: 'RUN_CHECK_DUPLICATE', 
+            defaultValue: true, 
+            description: 'Run check duplicate list test'
         )
         string(
             name: 'TAGS', 
@@ -71,50 +86,40 @@ pipeline {
         stage('Run Tests') {
             steps {
                 echo "Running Robot Framework Tests"
-                echo "TEST_SUITE parameter: ${params.TEST_SUITE}"
-                echo "RUN_MOBILE_TESTS parameter: ${params.RUN_MOBILE_TESTS}"
-                echo "TAGS parameter: ${params.TAGS}"
                 script {
                     def testFiles = []
                     def tagOption = params.TAGS ? "--include ${params.TAGS}" : ""
-                    def testSuite = params.TEST_SUITE ?: 'WEB'
                     
-                    // กำหนด test files ตาม TEST_SUITE parameter
-                    switch(testSuite) {
-                        case 'WEB':
-                            testFiles.add("${SCRIPTS_DIR}/login_test_web.robot")
-                            echo "Selected: WEB tests only"
-                            break
-                        case 'API':
-                            testFiles.add("${SCRIPTS_DIR}/api_testing.robot")
-                            echo "Selected: API tests only"
-                            break
-                        case 'MOBILE':
-                            if (params.RUN_MOBILE_TESTS) {
-                                testFiles.add("${SCRIPTS_DIR}/mobile_testing.robot")
-                                echo "Selected: MOBILE tests only"
-                            } else {
-                                echo "Mobile tests are disabled via RUN_MOBILE_TESTS parameter"
-                            }
-                            break
-                        case 'ALL':
-                            testFiles.add("${SCRIPTS_DIR}/login_test_web.robot")
-                            testFiles.add("${SCRIPTS_DIR}/api_testing.robot")
-                            echo "Selected: WEB + API tests"
-                            if (params.RUN_MOBILE_TESTS) {
-                                testFiles.add("${SCRIPTS_DIR}/mobile_testing.robot")
-                                echo "Added: MOBILE tests"
-                            } else {
-                                echo "Skipped: MOBILE tests (RUN_MOBILE_TESTS = false)"
-                            }
-                            break
-                        default:
-                            testFiles.add("${SCRIPTS_DIR}/login_test_web.robot")
-                            echo "Default: WEB tests only"
-                            break
+                    // เพิ่มไฟล์ test ตาม checkbox ที่เลือก
+                    if (params.RUN_WEB_TESTS) {
+                        testFiles.add("${SCRIPTS_DIR}/login_test_web.robot")
+                        echo "✓ Selected: Web Login Tests"
                     }
                     
-                    echo "Test files to execute (${testFiles.size()}): ${testFiles.join(', ')}"
+                    if (params.RUN_API_TESTS) {
+                        testFiles.add("${SCRIPTS_DIR}/api_testing.robot")
+                        echo "✓ Selected: API Tests"
+                    }
+                    
+                    if (params.RUN_CAESAR_CIPHER_DECRYPTION) {
+                        testFiles.add("${SCRIPTS_DIR}/couterclockwise_direction.robot")
+                        echo "✓ Selected: Caesar Cipher Decryption Tests"
+                    }
+                    
+                    if (params.RUN_CHECK_DUPLICATE) {
+                        testFiles.add("${SCRIPTS_DIR}/check_dup_item.robot")
+                        echo "✓ Selected: Check Duplicate Tests"
+                    }
+                    
+                    if (params.RUN_MOBILE_TESTS) {
+                        testFiles.add("${SCRIPTS_DIR}/mobile_testing.robot")
+                        echo "✓ Selected: Mobile Tests"
+                    }
+                    
+                    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                    echo "Total test files: ${testFiles.size()}"
+                    echo "Files: ${testFiles.join(', ')}"
+                    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
                     
                     if (testFiles.size() > 0) {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
@@ -123,7 +128,7 @@ pipeline {
                             """
                         }
                     } else {
-                        echo "WARNING: No test files to execute"
+                        echo "⚠️  WARNING: No test files selected!"
                     }
                 }
             }
