@@ -119,9 +119,9 @@ Delete Todo Item
     ${location}=    Get Element Location    ${todo_xpath}
     ${size}=    Get Element Size    ${todo_xpath}
 
-    ${start_x}=    Evaluate    ${location['x']} + ${size['width']} * 0.8
-    ${end_x}=    Evaluate    ${location['x']} + ${size['width']} * 0.2
-    ${y}=    Evaluate    ${location['y']} + ${size['height']} * 0.5
+    ${start_x: int}=    Evaluate    ${location['x']} + ${size['width']} * 0.8
+    ${end_x: int}=    Evaluate    ${location['x']} + ${size['width']} * 0.2
+    ${y: int}=    Evaluate    ${location['y']} + ${size['height']} * 0.5
 
     AppiumLibrary.Swipe    start_x=${start_x}    start_y=${y}    end_x=${end_x}    end_y=${y}    duration=1000
     Sleep    1s
