@@ -24,10 +24,11 @@ pipeline {
     
     environment {
         REPO_URL = 'https://github.com/Phatsawit-T/robot_Phatsawit.git'
-        RESULTS_DIR = 'results'
+        RESULTS_DIR = "results/${BUILD_TIMESTAMP}"
         SCRIPTS_DIR = 'src/scripts'
         REQUIREMENTS_FILE = 'requirements.txt'
         PYTHON_VERSION = '3.10'
+        BUILD_TIMESTAMP = new Date().format('yyyy-MM-dd_HH-mm-ss')
     }
     
     stages {
@@ -38,16 +39,16 @@ pipeline {
             }
         }
         
-        // stage('Install Dependencies') {
-        //     steps {
-        //         echo "Installing Python dependencies"
-        //         bat """
-        //             python --version
-        //             pip install --upgrade pip
-        //             pip install -r ${REQUIREMENTS_FILE}
-        //         """
-        //     }
-        // }
+        stage('Install Dependencies') {
+            steps {
+                echo "Installing Python dependencies"
+                bat """
+                    python --version
+                    pip install --upgrade pip
+                    pip install -r ${REQUIREMENTS_FILE}
+                """
+            }
+        }
         
         stage('Run Tests in Parallel') {
             parallel {
@@ -98,19 +99,6 @@ pipeline {
                     // Archive test results
                     archiveArtifacts artifacts: "${RESULTS_DIR}/**/*.html, ${RESULTS_DIR}/**/*.xml", 
                                    allowEmptyArchive: true
-                    
-                    // Publish Robot Framework results
-                    step([
-                        $class: 'RobotPublisher',
-                        outputPath: RESULTS_DIR,
-                        outputFileName: '**/output.xml',
-                        reportFileName: '**/report.html',
-                        logFileName: '**/log.html',
-                        disableArchiveOutput: false,
-                        passThreshold: 80,
-                        unstableThreshold: 70,
-                        onlyCritical: false
-                    ])
                 }
             }
         }
@@ -118,15 +106,30 @@ pipeline {
         stage('Generate Test Report') {
             steps {
                 echo "Generating consolidated test report"
-                bat """
-                    rebot --name "Automated Test Report" ^
-                          --outputdir ${RESULTS_DIR}/consolidated ^
-                          --output output.xml ^
-                          --log log.html ^
-                          --report report.html ^
-                          ${RESULTS_DIR}/web/output.xml ^
-                          ${RESULTS_DIR}/api/output.xml
-                """
+                script {
+                    def outputFiles = []
+                    
+                    if (fileExists("${RESULTS_DIR}/web/output.xml")) {
+                        outputFiles.add("${RESULTS_DIR}/web/output.xml")
+                    }
+                    
+                    if (fileExists("${RESULTS_DIR}/api/output.xml")) {
+                        outputFiles.add("${RESULTS_DIR}/api/output.xml")
+                    }
+                    
+                    if (outputFiles.size() > 0) {
+                        bat """
+                            rebot --name "Automated Test Report" ^
+                                  --outputdir ${RESULTS_DIR}/consolidated ^
+                                  --output output.xml ^
+                                  --log log.html ^
+                                  --report report.html ^
+                                  ${outputFiles.join(' ^')}
+                        """
+                    } else {
+                        echo "No test results to consolidate"
+                    }
+                }
             }
         }
     }
