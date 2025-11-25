@@ -34,6 +34,7 @@ Open Mobile Application
     ...    platformVersion=${Mobile.PLATFORMVERSION}
     ...    deviceName=${Mobile.DEVICENAME}
     ...    udid=${Mobile.UDID}
+    ...    app=${CURDIR}/../../../../data/app-minimal.apk
     ...    appPackage=${Mobile.APPPACKAGE}
     ...    appActivity=${Mobile.APPACTIVITY}
     ...    automationName=${Mobile.AUTOMATIONNAME}
@@ -122,7 +123,7 @@ Delete Todo Item
     ${end_x}=    Evaluate    ${location['x']} + ${size['width']} * 0.2
     ${y}=    Evaluate    ${location['y']} + ${size['height']} * 0.5
 
-    Swipe    ${start_x}    ${y}    ${end_x}    ${y}    1000
+    AppiumLibrary.Swipe    start_x=${start_x}    start_y=${y}    end_x=${end_x}    end_y=${y}    duration=1000
     Sleep    1s
 
 Verify Todo Item Deleted
