@@ -111,7 +111,7 @@ TC-005 Add Todo With Special Characters
     ...    - ระบบรองรับและแสดงอักขระพิเศษได้ถูกต้อง
     [Tags]    functional    p2    input_validation
 
-    ${special_text}=    Set Variable    Test!@#$%^&*()_+-=
+    VAR    ${special_text}=    Test!@#$%^&*()_+-=
     mobile.keywords.Add Todo Item    ${special_text}
     mobile.keywords.Verify Todo Item Exists    ${special_text}
 
@@ -127,7 +127,7 @@ TC-006 Add Todo With Unicode Characters
     ...    - ระบบรองรับและแสดง Unicode ได้ถูกต้อง
     [Tags]    functional    p2    input_validation    i18n
 
-    ${unicode_text}=    Set Variable    สวัสดี ✨ Hello こんにちは 🎉
+    VAR    ${unicode_text}=    สวัสดี ✨ Hello こんにちは 🎉
     mobile.keywords.Add Todo Item    ${unicode_text}
     mobile.keywords.Verify Todo Item Exists    ${unicode_text}
 
